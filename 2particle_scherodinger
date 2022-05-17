@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 16 19:41:48 2022
+
+@author: alexandreduarte
+"""
+
+
+from matplotlib import pyplot
+from numpy import *
+import math
+import cmath
+
+SIZE = 20
+
+f1 = array([[complex(0,0) for a in range(0,SIZE)] for b in range(0,SIZE)])
+f1t = array([[complex(0,0) for a in range(0,SIZE)] for b in range(0,SIZE)])
+f2 = array([[complex(0,0) for a in range(0,SIZE)] for b in range(0,SIZE)])
+f2t = array([[complex(0,0) for a in range(0,SIZE)] for b in range(0,SIZE)])
+graph = [[0 for a in range(0,SIZE)] for b in range(0,SIZE)];
+
+f1[8][6] = sqrt(2)*complex(1, 1)/2;
+f2[11][13] = sqrt(2)*complex(1, 1)/2;
+
+a = 6.10e-39
+b = 6.10e-39
+c = 2e-28
+d = 1.055e-34
+
+
+dt = 1e-10
+ds = 1e-6
+
+def derivate2i(f, i, j):
+    return f[i+1][j] - 2*f[i][j] + f[i-1][j]
+
+def derivate2j(f, i, j):
+    return f[i][j+1] - 2*f[i][j] + f[i][j-1]
+
+def calculateStep1(i, j):
+    dif = (derivate2i(f1, i, j) + derivate2j(f1, i, j))*(dt*a/(ds*ds*d))
+    pot = complex(0, 0)
+    for x in range(1,SIZE-1):
+        if i==x:
+            continue;
+        for y in range(1,SIZE-1):
+            if j==y:
+                continue;
+            pot += (pow(f2[x][y].real, 2) + pow(f2[x][y].imag, 2))/math.sqrt((i-x)*(i-x) + (j-y)*(j-y))
+            
+    tot = (-dif + (ds*dt*c/(d))*(pot*f1[i][j]))*complex(0, 1)
+    f1t[i][j] = f1[i][j] + tot 
+
+def calculateStep2(i, j):
+    dif = (derivate2i(f2, i, j) + derivate2j(f2, i, j))*(dt*b/(ds*ds*d))
+    pot = complex(0, 0)
+    for x in range(1,SIZE-1):
+        if i==x:
+            continue
+        for y in range(1,SIZE-1):
+            if j==y:
+                continue
+            pot += (pow(f1[x][y].real, 2) + pow(f1[x][y].imag, 2))/math.sqrt((i-x)*(i-x) + (j-y)*(j-y))
+            
+    tot = (-dif + (ds*dt*c/(d))*(pot*f2[i][j]))*complex(0, 1)
+    f2t[i][j] = f2[i][j] + tot 
+
+
+pyplot.figure(figsize=(SIZE,SIZE))
+
+for step in range (0,4000):
+    for x in range(1,SIZE-1):
+        for y in range(1,SIZE-1):
+            calculateStep1(x, y)
+            calculateStep2(x, y)
+            f1tf2t = f1t[x][y]+f2t[x][y]
+            graph[x][y] = (f1tf2t*(f1tf2t.conjugate())).real
+    
+    if step % 20 == 0:
+        pyplot.imshow(graph)
+        pyplot.pause(0.05)
+        
+        
+    f1 = f1t.copy()
+    f2 = f2t.copy()
+    
+
+pyplot.show()
